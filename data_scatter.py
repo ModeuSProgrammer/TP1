@@ -1,4 +1,4 @@
-from datatest
+import datatest
 import io
 import tkinter as tk
 from matplotlib import figure
@@ -12,31 +12,36 @@ def app():
         window = tk.Tk()
 
         # Отображения меню ось y
-        def nav_y_interface():
+        def nav_y_interface(columns):
             frame_y = tk.Frame(borderwidth=1, relief=tk.SOLID, padx=5, pady=5)
             frame_y.pack(side=tk.LEFT, fill=tk.Y)
-            name_btn = tk.Button(frame_y, text="значение 1", padx=5, pady=5)
-            name_btn.pack(anchor=tk.NW)
+            for col in columns:
+                btn = tk.Button(frame_y, text=col, padx=5, pady=5)
+                btn.pack(anchor=tk.NW)
 
-        # Добавление значений меню ось y
-        def nav_add_y_values():
-            print (df)
-
-        nav_add_y_values()
         # Отображения меню ось x
-        def nav_x_interface():
+        def nav_x_interface(columns):
             frame_x = tk.Frame(borderwidth=1, relief=tk.SOLID, padx=5, pady=5)
             frame_x.pack(side=tk.BOTTOM, fill=tk.X)
+            for col in columns:
+                btn = tk.Button(frame_x, text=col, padx=5, pady=5)
+                btn.pack(side=tk.LEFT)
 
-            name_btn = tk.Button(frame_x, text="значение 1", padx=5, pady=5)
-            name_btn.pack(side=tk.LEFT)
+        # Заполнение значений
+        def nav_add_xy_values():
+            part_df = df.drop(columns=['title', 'artist/s', 'key', 'mode', 'time_signature'])
+            columns = (list(part_df.columns)[1:])
+            nav_y_interface(columns)
+            nav_x_interface(columns)
 
         # Работа с отображением графиков
         def get_scatter_as_photoImage():
             fig = figure.Figure()
             ax = fig.add_subplot()
-            fig.supxlabel("метка абцисс x")
-            fig.supylabel("метка ординат y")
+            part_df = df.drop(columns=['title', 'artist/s', 'key', 'mode', 'time_signature'])
+
+            fig.supxlabel(part_df.columns[2])
+            fig.supylabel(part_df.columns[1])
             ax.scatter([0], [0])
             buf = io.BytesIO()
             fig.savefig(buf)
@@ -44,8 +49,7 @@ def app():
             return ImageTk.PhotoImage(image)
 
         # Вызов функций связанных с отображением информации
-        nav_y_interface()
-        nav_x_interface()
+        nav_add_xy_values()
         canvas = tk.Canvas(width=640, height=480)
         canvas.pack(side=tk.LEFT)
 
