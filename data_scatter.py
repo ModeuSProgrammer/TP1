@@ -1,11 +1,13 @@
-from datatest import df
+from datatest
 import io
 import tkinter as tk
 from matplotlib import figure
 from PIL import Image, ImageTk
 
-def app_interface():
+
+def app():
     try:
+        df = datatest.df
         # Создание главного окна
         window = tk.Tk()
 
@@ -60,4 +62,4 @@ def app_interface():
 
 
 if __name__ == "__main__":
-    app_interface()
+    app()
