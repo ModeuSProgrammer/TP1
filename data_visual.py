@@ -1,9 +1,14 @@
-import datatest
+import numpy as np
 from datetime import datetime
 import io
+
 import tkinter as tk
-from matplotlib import figure
+from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
+from matplotlib import figure
+
+import matplotlib as mpl
+import datatest
 
 df = datatest.df
 df = df.drop(columns=['title'])
@@ -12,6 +17,13 @@ current_x_index = 1
 current_y_index = 2
 part_numpy_df = df.drop(columns=['artist/s', 'key', 'mode', 'time_signature'])
 part_category_df = df[['artist/s', 'key', 'mode', 'time_signature']]
+# Список схем
+COLORMAPS = ["viridis", "plasma", "inferno", "magma", "cividis", "Greys", "Purples", "Blues", "Greens", "Oranges",
+             "Reds", "YlOrBr", "YlOrRd", "OrRd", "winter", "PuRd", "RdPu", "BuPu", "GnBu", "PuBu", "YlGnBu", "PuBuGn",
+             "BuGn", "YlGn", "binary", "gist_yarg", "spring", "summer", "autumn"
+             ]
+# Схема начальная
+current_colormap = 'PuBuGn'
 
 
 def app():
@@ -75,22 +87,36 @@ def app():
             y_column = df.iloc[:, current_y_index]
             x_type = get_col_type(df.columns[current_x_index])
             y_type = get_col_type(df.columns[current_y_index])
-            #Варианты диаграмм
+            # Получаю цвет схемы
+            cmap = mpl.colormaps[current_colormap]
+            # Варианты диаграмм
             if current_x_index == current_y_index and x_type == "numeric":
-                ax.hist(x_column, bins=10)
+                counts, bins, patches = ax.hist(x_column, bins=10)
+                colors = cmap(np.linspace(0.25, 0.85, len(patches)))
+                for patch, color in zip(patches, colors):
+                    patch.set_facecolor(color)
+                    patch.set_edgecolor("white")
+                    patch.set_linewidth(0.5)
             elif current_x_index == current_y_index and x_type == "category":
                 counts = x_column.value_counts()
-                ax.pie(counts.values, labels=counts.index)
+                colors = cmap(np.linspace(0.25, 0.85, len(counts)))
+                ax.pie(counts.values, labels=counts.index, colors=colors)
             elif x_type == "category" and y_type == "numeric":
                 counts = df.groupby(df.columns[current_x_index])[df.columns[current_y_index]].count()
-                ax.bar(counts.index.astype(str), counts.values)
+                bars = ax.bar(counts.index.astype(str), counts.values)
+                colors = cmap(np.linspace(0.25, 0.85, len(bars)))
+                for bar, color in zip(bars, colors):
+                    bar.set_facecolor(color)
                 ax.tick_params(axis='x', rotation=90, labelsize=8)
             elif x_type == "numeric" and y_type == "category":
                 groups = [x_column[y_column == cat] for cat in y_column.unique()]
-                ax.boxplot(groups, tick_labels=y_column.unique())
+                boxes = ax.boxplot(groups, tick_labels=y_column.unique(), patch_artist=True)
+                colors = cmap(np.linspace(0.25, 0.85, len(boxes["boxes"])))
+                for box, color in zip(boxes["boxes"], colors):
+                    box.set_facecolor(color)
                 ax.tick_params(axis='x', rotation=90, labelsize=8)
             else:
-                ax.scatter(x_column, y_column, marker=">")
+                ax.scatter(x_column, y_column, marker=">", c=cmap(np.linspace(0.25, 0.85, len(x_column))))
 
             buf = io.BytesIO()
             fig.savefig(buf, format="png")
@@ -107,7 +133,22 @@ def app():
             filename = f"graph_{time_formatted}.png"
             fig.savefig(filename)
 
+        # Изменение темы
+        def theme_click(event):
+            global current_colormap
+            current_colormap = combobox.get()
+            update_image()
+
         window = tk.Tk()
+
+        # Фрейм для меню сверху
+        top_frame = tk.Frame(window)
+        top_frame.pack(side=tk.TOP, fill=tk.X)
+
+        combobox = Combobox(values=COLORMAPS)
+        combobox.set(current_colormap)
+        combobox.bind("<<ComboboxSelected>>", theme_click)
+        combobox.pack(anchor="nw", padx=6, pady=6)
 
         # Создание областей для меню x и y
         frame_y = tk.Frame(borderwidth=1, relief=tk.SOLID, padx=5, pady=5)
